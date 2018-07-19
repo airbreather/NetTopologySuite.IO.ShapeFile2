@@ -1,0 +1,45 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2035
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetTopologySuite.IO.ShapeFile2", "NetTopologySuite.IO.ShapeFile2\NetTopologySuite.IO.ShapeFile2.csproj", "{56E10D00-89A3-45DF-9743-12A25E5F4873}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9E579465-65B7-44D4-B043-24223217D897}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		.travis.yml = .travis.yml
+		LICENSE.md = LICENSE.md
+		nts.snk = nts.snk
+		NuGet.Config = NuGet.Config
+		README.md = README.md
+		stylecop.json = stylecop.json
+		StyleCop.ruleset = StyleCop.ruleset
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetTopologySuite.IO.ShapeFile2.Tests", "NetTopologySuite.IO.ShapeFile2.Tests\NetTopologySuite.IO.ShapeFile2.Tests.csproj", "{576B4306-EC26-4659-978B-96DD71F2AAF5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{56E10D00-89A3-45DF-9743-12A25E5F4873}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56E10D00-89A3-45DF-9743-12A25E5F4873}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56E10D00-89A3-45DF-9743-12A25E5F4873}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56E10D00-89A3-45DF-9743-12A25E5F4873}.Release|Any CPU.Build.0 = Release|Any CPU
+		{576B4306-EC26-4659-978B-96DD71F2AAF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{576B4306-EC26-4659-978B-96DD71F2AAF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{576B4306-EC26-4659-978B-96DD71F2AAF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{576B4306-EC26-4659-978B-96DD71F2AAF5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9D67EDFB-8768-4926-92D1-B1176CCABC77}
+	EndGlobalSection
+EndGlobal
