@@ -36,8 +36,8 @@ namespace NetTopologySuite.IO
 
         public uint FileLengthInBytes
         {
-            get => WordsToBytes(this.fileLengthInWords);
-            set => this.fileLengthInWords = BytesToWords(value);
+            get => WordsToBytes(this.FileLengthInWords);
+            set => this.FileLengthInWords = BytesToWords(value);
         }
 
         public int Version
