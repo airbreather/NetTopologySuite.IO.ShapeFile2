@@ -23,7 +23,7 @@ namespace NetTopologySuite.IO
             set => this.contentLengthInWords = ToOrFromBigEndian(value);
         }
 
-        public long ContentLengthInBytes
+        public uint ContentLengthInBytes
         {
             get => WordsToBytes(this.ContentLengthInWords);
             set => this.ContentLengthInWords = BytesToWords(value);

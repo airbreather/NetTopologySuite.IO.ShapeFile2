@@ -1,20 +1,23 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace NetTopologySuite.IO
 {
-    public abstract class ShapefileVisitorBase
+    public class ShapefileVisitorBase
     {
-        public virtual void VisitMainFileHeader(ref ShapefileHeader header) { }
+        public virtual ValueTask<ShapefileHeader> VisitMainFileHeaderAsync(ShapefileHeader header, CancellationToken cancellationToken = default) => new ValueTask<ShapefileHeader>(header);
 
-        public virtual void VisitMainFileRecordHeader(ref ShapefileMainFileRecordHeader header) { }
+        public virtual ValueTask<ShapefileMainFileRecordHeader> VisitMainFileRecordHeaderAsync(ShapefileMainFileRecordHeader header, CancellationToken cancellationToken = default) => new ValueTask<ShapefileMainFileRecordHeader>(header);
 
-        public void VisitMainFileRecord(Span<byte> rawRecordData)
+        public async ValueTask<Memory<byte>> VisitMainFileRecordAsync(Memory<byte> rawRecordData, CancellationToken cancellationToken = default)
         {
-            this.OnVisitRawMainFileRecord(ref rawRecordData);
+            rawRecordData = await this.OnVisitRawMainFileRecordAsync(rawRecordData, cancellationToken).ConfigureAwait(false);
 
             // TODO: interpret the record and add "friendly" methods for subclasses to override.
+            return rawRecordData;
         }
 
-        protected virtual void OnVisitRawMainFileRecord(ref Span<byte> rawRecordData) { }
+        protected virtual ValueTask<Memory<byte>> OnVisitRawMainFileRecordAsync(Memory<byte> rawRecordData, CancellationToken cancellationToken) => new ValueTask<Memory<byte>>(rawRecordData);
     }
 }

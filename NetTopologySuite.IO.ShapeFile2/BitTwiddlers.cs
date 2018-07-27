@@ -16,10 +16,10 @@ namespace NetTopologySuite.IO
         internal static double ToOrFromLittleEndian(double val) => BitConverter.IsLittleEndian ? val : BitConverter.Int64BitsToDouble(BinaryPrimitives.ReverseEndianness(BitConverter.DoubleToInt64Bits(val)));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static long WordsToBytes(int value) => unchecked(value + (long)value);
+        internal static uint WordsToBytes(int value) => unchecked((uint)(value + (long)value));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int BytesToWords(long value)
+        internal static int BytesToWords(uint value)
         {
             if ((value & 1) == 1)
             {

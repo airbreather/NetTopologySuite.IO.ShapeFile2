@@ -4,7 +4,7 @@ using static NetTopologySuite.IO.BitTwiddlers;
 
 namespace NetTopologySuite.IO
 {
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Explicit, Size = 100)]
     public struct ShapefileHeader
     {
         [FieldOffset(0)]
@@ -19,6 +19,9 @@ namespace NetTopologySuite.IO
         [FieldOffset(32)]
         private ShapeType shapeTypeForAllRecords;
 
+        [FieldOffset(36)]
+        private ShapefileBoundingBox boundingBox;
+
         public int FileCode
         {
             get => ToOrFromBigEndian(this.fileCode);
@@ -31,7 +34,7 @@ namespace NetTopologySuite.IO
             set => this.fileLengthInWords = ToOrFromBigEndian(value);
         }
 
-        public long FileLengthInBytes
+        public uint FileLengthInBytes
         {
             get => WordsToBytes(this.fileLengthInWords);
             set => this.fileLengthInWords = BytesToWords(value);
@@ -49,8 +52,11 @@ namespace NetTopologySuite.IO
             set => this.shapeTypeForAllRecords = (ShapeType)ToOrFromLittleEndian((int)value);
         }
 
-        [field: FieldOffset(36)]
-        public ShapefileBoundingBox BoundingBox { get; set; }
+        public ShapefileBoundingBox BoundingBox
+        {
+            get => this.boundingBox;
+            set => this.boundingBox = value;
+        }
 
         public override string ToString() => $"ShapefileMainFileHeader[FileCode={this.FileCode}, FileLengthInWords={this.FileLengthInWords}, Version={this.Version}, ShapeTypeForAllRecords={this.ShapeTypeForAllRecords}, BoundingBox={this.BoundingBox}]";
     }

@@ -1,40 +1,16 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace NetTopologySuite.IO
 {
     public static class ShapefileReader
     {
-        public static void ReadShapefile(string mainFilePath, ShapefileVisitorBase visitor)
-        {
-            if (visitor is null)
-            {
-                throw new ArgumentNullException(nameof(visitor));
-            }
-
-            FileStream mainFileStream = null;
-            FileStream indexFileStream = null;
-            FileStream attributeFileStream = null;
-            try
-            {
-                ReadShapefile(
-                    new ShapefileRequiredStreamContainer(
-                        mainFileStream = new FileStream(mainFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan),
-                        indexFileStream = new FileStream(Path.ChangeExtension(mainFilePath, "shx"), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan),
-                        attributeFileStream = new FileStream(Path.ChangeExtension(mainFilePath, "dbf"), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan)),
-                        visitor);
-            }
-            finally
-            {
-                mainFileStream?.Dispose();
-                indexFileStream?.Dispose();
-                attributeFileStream?.Dispose();
-            }
-        }
-
-        public static void ReadShapefile(ShapefileRequiredStreamContainer streamContainer, ShapefileVisitorBase visitor)
+        public static async Task ReadShapefileAsync(ShapefileRequiredFileContainer streamContainer, ShapefileVisitorBase visitor, CancellationToken cancellationToken = default)
         {
             if (streamContainer is null)
             {
@@ -46,79 +22,100 @@ namespace NetTopologySuite.IO
                 throw new ArgumentNullException(nameof(visitor));
             }
 
-            byte[] oneHundredByteBuffer = ArrayPool<byte>.Shared.Rent(100);
-            try
+            using (var oneHundredByteBufferOwner = MemoryPool<byte>.Shared.Rent(100))
             {
-                var (mainFileStream, indexFileStream, attributeFileStream) = (streamContainer.MainFileStream, streamContainer.IndexFileStream, streamContainer.AttributeFileStream);
-                var mainFileHeader = Read<ShapefileHeader>(mainFileStream, oneHundredByteBuffer);
-                visitor.VisitMainFileHeader(ref mainFileHeader);
+                var oneHundredByteBuffer = oneHundredByteBufferOwner.Memory;
+                var (mainFile, indexFile, attributeFile) = (streamContainer.MainFileReader, streamContainer.IndexFileReader, streamContainer.AttributeFileReader);
 
-                long bytesReadSoFar = Unsafe.SizeOf<ShapefileHeader>();
-                long endOfFile = mainFileHeader.FileLengthInBytes;
-                long recordHeaderLength = Unsafe.SizeOf<ShapefileMainFileRecordHeader>();
-                while (bytesReadSoFar + recordHeaderLength <= endOfFile)
+                var mainFileHeaderBuf = oneHundredByteBuffer.Slice(0, Unsafe.SizeOf<ShapefileHeader>());
+                if (!await FillBufferFromPipeAsync(mainFile, mainFileHeaderBuf, cancellationToken).ConfigureAwait(false))
                 {
-                    var nextRecordHeader = Read<ShapefileMainFileRecordHeader>(mainFileStream, oneHundredByteBuffer);
-                    bytesReadSoFar += recordHeaderLength;
-                    visitor.VisitMainFileRecordHeader(ref nextRecordHeader);
+                    return;
+                }
 
-                    long nextRecordContentLengthInBytes = nextRecordHeader.ContentLengthInBytes;
+                var mainFileHeader = Unsafe.ReadUnaligned<ShapefileHeader>(ref oneHundredByteBuffer.Span[0]);
+                mainFileHeader = await visitor.VisitMainFileHeaderAsync(mainFileHeader, cancellationToken).ConfigureAwait(false);
+
+                while (true)
+                {
+                    var nextRecordHeaderBuf = oneHundredByteBuffer.Slice(0, Unsafe.SizeOf<ShapefileMainFileRecordHeader>());
+                    if (!await FillBufferFromPipeAsync(mainFile, nextRecordHeaderBuf, cancellationToken).ConfigureAwait(false))
+                    {
+                        break;
+                    }
+
+                    var nextRecordHeader = Unsafe.ReadUnaligned<ShapefileMainFileRecordHeader>(ref nextRecordHeaderBuf.Span[0]);
+                    uint nextRecordContentLengthInBytes = nextRecordHeader.ContentLengthInBytes;
                     if (nextRecordContentLengthInBytes > int.MaxValue)
                     {
                         throw new NotSupportedException("Each individual shapefile record must be smaller than 2 GiB, for now.");
                     }
 
-                    bytesReadSoFar += nextRecordContentLengthInBytes;
-                    if (bytesReadSoFar > endOfFile)
-                    {
-                        break;
-                    }
+                    nextRecordHeader = await visitor.VisitMainFileRecordHeaderAsync(nextRecordHeader, cancellationToken).ConfigureAwait(false);
 
                     int recordLength = unchecked((int)nextRecordContentLengthInBytes);
-                    if (recordLength <= oneHundredByteBuffer.Length)
+                    var recordBufOwner = recordLength <= oneHundredByteBuffer.Length
+                        ? oneHundredByteBufferOwner
+                        : MemoryPool<byte>.Shared.Rent(recordLength);
+                    try
                     {
-                        Read(mainFileStream, oneHundredByteBuffer, recordLength);
+                        var recordBuf = recordBufOwner.Memory.Slice(0, recordLength);
+                        if (!await FillBufferFromPipeAsync(mainFile, recordBuf, cancellationToken).ConfigureAwait(false))
+                        {
+                            break;
+                        }
+
+                        await visitor.VisitMainFileRecordAsync(recordBuf, cancellationToken).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        if (recordBufOwner != oneHundredByteBufferOwner)
+                        {
+                            recordBufOwner.Dispose();
+                        }
+                    }
+                }
+            }
+        }
+
+        private static async Task<bool> FillBufferFromPipeAsync(PipeReader pipe, Memory<byte> bufferToFill, CancellationToken cancellationToken)
+        {
+            var rem = bufferToFill;
+            while (rem.Length != 0)
+            {
+                var read = await pipe.ReadAsync(cancellationToken).ConfigureAwait(false);
+                var buffer = read.Buffer;
+                if (buffer.IsEmpty && read.IsCompleted)
+                {
+                    return false;
+                }
+
+                int processed = 0;
+                foreach (var segment in buffer)
+                {
+                    int curProcessed;
+                    if (segment.Length >= rem.Length)
+                    {
+                        segment.Slice(0, curProcessed = rem.Length).CopyTo(rem);
                     }
                     else
                     {
-                        byte[] recordBuf = ArrayPool<byte>.Shared.Rent(recordLength);
-                        try
-                        {
-                            Read(mainFileStream, recordBuf, recordLength);
-                        }
-                        finally
-                        {
-                            ArrayPool<byte>.Shared.Return(recordBuf);
-                        }
+                        segment.CopyTo(rem.Slice(0, curProcessed = segment.Length));
+                    }
+
+                    rem = rem.Slice(curProcessed);
+                    processed += curProcessed;
+
+                    if (rem.Length == 0)
+                    {
+                        break;
                     }
                 }
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(oneHundredByteBuffer);
-            }
-        }
 
-        private static void Read(Stream stream, byte[] buf, int length)
-        {
-            int cur = 0;
-            while (length > 0)
-            {
-                int nxt = stream.Read(buf, cur, length);
-                if (nxt == 0)
-                {
-                    ThrowEndOfStreamException();
-                }
-
-                cur += nxt;
-                length -= nxt;
+                pipe.AdvanceTo(buffer.GetPosition(processed));
             }
-        }
 
-        private static T Read<T>(Stream stream, byte[] buf)
-        {
-            Read(stream, buf, Unsafe.SizeOf<T>());
-            return Unsafe.ReadUnaligned<T>(ref buf[0]);
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
