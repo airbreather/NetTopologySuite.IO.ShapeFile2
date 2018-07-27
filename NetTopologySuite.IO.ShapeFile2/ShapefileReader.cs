@@ -36,6 +36,8 @@ namespace NetTopologySuite.IO
                 var mainFileHeader = Unsafe.ReadUnaligned<ShapefileHeader>(ref oneHundredByteBuffer.Span[0]);
                 await visitor.VisitMainFileHeaderAsync(mainFileHeader, cancellationToken).ConfigureAwait(false);
 
+                var shapeType = mainFileHeader.ShapeTypeForAllRecords;
+
                 while (true)
                 {
                     var nextRecordHeaderBuf = oneHundredByteBuffer.Slice(0, Unsafe.SizeOf<ShapefileMainFileRecordHeader>());
@@ -65,7 +67,7 @@ namespace NetTopologySuite.IO
                             break;
                         }
 
-                        await visitor.VisitMainFileRecordAsync(recordBuf, cancellationToken).ConfigureAwait(false);
+                        await visitor.VisitMainFileRecordAsync(shapeType, recordBuf, cancellationToken).ConfigureAwait(false);
                     }
                     finally
                     {

@@ -10,13 +10,20 @@ namespace NetTopologySuite.IO
 
         public virtual ValueTask VisitMainFileRecordHeaderAsync(ShapefileMainFileRecordHeader header, CancellationToken cancellationToken = default) => default;
 
-        public async ValueTask VisitMainFileRecordAsync(Memory<byte> rawRecordData, CancellationToken cancellationToken = default)
+        public async ValueTask VisitMainFileRecordAsync(ShapeType shapeType, Memory<byte> rawRecordData, CancellationToken cancellationToken = default)
         {
-            rawRecordData = await this.OnVisitRawMainFileRecordAsync(rawRecordData, cancellationToken).ConfigureAwait(false);
+            (shapeType, rawRecordData) = await this.OnVisitRawMainFileRecordAsync(shapeType, rawRecordData, cancellationToken).ConfigureAwait(false);
+
+            if (shapeType == ShapeType.Null || rawRecordData.IsEmpty)
+            {
+                // subclass fully processed this at the raw level.
+                // we can move on.
+                return;
+            }
 
             // TODO: interpret the record and add "friendly" methods for subclasses to override.
         }
 
-        protected virtual ValueTask<Memory<byte>> OnVisitRawMainFileRecordAsync(Memory<byte> rawRecordData, CancellationToken cancellationToken) => new ValueTask<Memory<byte>>(rawRecordData);
+        protected virtual ValueTask<(ShapeType shapeType, Memory<byte> rawRecordData)> OnVisitRawMainFileRecordAsync(ShapeType shapeType, Memory<byte> rawRecordData, CancellationToken cancellationToken) => new ValueTask<(ShapeType shapeType, Memory<byte> rawRecordDate)>((shapeType, rawRecordData));
     }
 }
