@@ -34,7 +34,7 @@ namespace NetTopologySuite.IO
                 }
 
                 var mainFileHeader = Unsafe.ReadUnaligned<ShapefileHeader>(ref oneHundredByteBuffer.Span[0]);
-                mainFileHeader = await visitor.VisitMainFileHeaderAsync(mainFileHeader, cancellationToken).ConfigureAwait(false);
+                await visitor.VisitMainFileHeaderAsync(mainFileHeader, cancellationToken).ConfigureAwait(false);
 
                 while (true)
                 {
@@ -45,13 +45,13 @@ namespace NetTopologySuite.IO
                     }
 
                     var nextRecordHeader = Unsafe.ReadUnaligned<ShapefileMainFileRecordHeader>(ref nextRecordHeaderBuf.Span[0]);
+                    await visitor.VisitMainFileRecordHeaderAsync(nextRecordHeader, cancellationToken).ConfigureAwait(false);
+
                     uint nextRecordContentLengthInBytes = nextRecordHeader.ContentLengthInBytes;
                     if (nextRecordContentLengthInBytes > int.MaxValue)
                     {
                         throw new NotSupportedException("Each individual shapefile record must be smaller than 2 GiB, for now.");
                     }
-
-                    nextRecordHeader = await visitor.VisitMainFileRecordHeaderAsync(nextRecordHeader, cancellationToken).ConfigureAwait(false);
 
                     int recordLength = unchecked((int)nextRecordContentLengthInBytes);
                     var recordBufOwner = recordLength <= oneHundredByteBuffer.Length
