@@ -119,8 +119,5 @@ namespace NetTopologySuite.IO
 
             return true;
         }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowEndOfStreamException() => throw new EndOfStreamException();
     }
 }
