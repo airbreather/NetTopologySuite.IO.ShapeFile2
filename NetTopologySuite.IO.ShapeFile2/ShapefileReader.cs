@@ -80,7 +80,7 @@ namespace NetTopologySuite.IO
             }
         }
 
-        private static async Task<bool> FillBufferFromPipeAsync(PipeReader pipe, Memory<byte> bufferToFill, CancellationToken cancellationToken)
+        private static async ValueTask<bool> FillBufferFromPipeAsync(PipeReader pipe, Memory<byte> bufferToFill, CancellationToken cancellationToken)
         {
             var rem = bufferToFill;
             while (rem.Length != 0)
