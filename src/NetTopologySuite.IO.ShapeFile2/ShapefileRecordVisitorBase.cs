@@ -74,6 +74,6 @@ namespace NetTopologySuite.IO
 
         protected virtual ValueTask OnVisitPolyLineXYAsync(PolyLineXY polyLine, CancellationToken cancellationToken) => default;
 
-        protected virtual ValueTask OnVisitPolygonXYAsync(PolyLineXY polyLine, CancellationToken cancellationToken) => default;
+        protected virtual ValueTask OnVisitPolygonXYAsync(PolyLineXY polygon, CancellationToken cancellationToken) => default;
     }
 }
