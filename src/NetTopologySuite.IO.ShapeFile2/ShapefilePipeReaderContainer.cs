@@ -4,27 +4,27 @@ using System.IO.Pipelines;
 namespace NetTopologySuite.IO
 {
     /// <summary>
-    /// The input side container for the three file streams that are required to be present in any
-    /// fully valid ESRI shapefile.
+    /// The input side container for two of the three file streams that are required to be present
+    /// in any fully valid ESRI shapefile.
     /// </summary>
-    public sealed class ShapefileRequiredFileReaderContainer
+    /// <remarks>
+    /// The index file (*.shx) is required by ESRI, but we have no use for it when all we're doing
+    /// is reading sequentially.
+    /// </remarks>
+    public sealed class ShapefilePipeReaderContainer
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ShapefileRequiredFileReaderContainer"/> class.
+        /// Initializes a new instance of the <see cref="ShapefilePipeReaderContainer"/> class.
         /// </summary>
         /// <param name="mainFileReader">
         /// The <see cref="PipeReader"/> that holds the shape data.
         /// </param>
-        /// <param name="indexFileReader">
-        /// The <see cref="PipeReader"/> that holds the spatial index data.
-        /// </param>
         /// <param name="attributeFileReader">
         /// The <see cref="PipeReader"/> that holds the shape-by-shape metadata.
         /// </param>
-        public ShapefileRequiredFileReaderContainer(PipeReader mainFileReader, PipeReader indexFileReader, PipeReader attributeFileReader)
+        public ShapefilePipeReaderContainer(PipeReader mainFileReader, PipeReader attributeFileReader)
         {
             this.MainFileReader = mainFileReader ?? throw new ArgumentNullException(nameof(mainFileReader));
-            this.IndexFileReader = indexFileReader ?? throw new ArgumentNullException(nameof(indexFileReader));
             this.AttributeFileReader = attributeFileReader ?? throw new ArgumentNullException(nameof(attributeFileReader));
         }
 
@@ -32,11 +32,6 @@ namespace NetTopologySuite.IO
         /// Gets the <see cref="PipeReader"/> that holds the shape data.
         /// </summary>
         public PipeReader MainFileReader { get; }
-
-        /// <summary>
-        /// Gets the <see cref="PipeReader"/> that holds the spatial index data.
-        /// </summary>
-        public PipeReader IndexFileReader { get; }
 
         /// <summary>
         /// Gets the <see cref="PipeReader"/> that holds the shape-by-shape metadata.

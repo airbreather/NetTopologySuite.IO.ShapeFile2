@@ -9,7 +9,7 @@ namespace NetTopologySuite.IO
 {
     public static class ShapefileReader
     {
-        public static async Task ReadShapefileAsync(ShapefileRequiredFileReaderContainer pipeReaderContainer, ShapefileVisitorBase visitor, CancellationToken cancellationToken = default)
+        public static async Task ReadShapefileAsync(ShapefilePipeReaderContainer pipeReaderContainer, ShapefileVisitorBase visitor, CancellationToken cancellationToken = default)
         {
             if (pipeReaderContainer is null)
             {
@@ -24,7 +24,7 @@ namespace NetTopologySuite.IO
             using (var oneHundredByteBufferOwner = MemoryPool<byte>.Shared.Rent(100))
             {
                 var oneHundredByteBuffer = oneHundredByteBufferOwner.Memory;
-                var (mainFile, indexFile, attributeFile) = (pipeReaderContainer.MainFileReader, pipeReaderContainer.IndexFileReader, pipeReaderContainer.AttributeFileReader);
+                var (mainFile, attributeFile) = (pipeReaderContainer.MainFileReader, pipeReaderContainer.AttributeFileReader);
 
                 var mainFileHeaderBuf = oneHundredByteBuffer.Slice(0, Unsafe.SizeOf<ShapefileHeader>());
                 if (!await FillBufferFromPipeAsync(mainFile, mainFileHeaderBuf, cancellationToken).ConfigureAwait(false))
