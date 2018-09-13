@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <SolutionDir Condition=" '$(SolutionDir)' == '' ">$(ProjectDir)..\</SolutionDir>
+    <SolutionDir Condition=" '$(SolutionDir)' == '' ">$(ProjectDir)..\..\</SolutionDir>
 
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <RootNamespace>NetTopologySuite.IO</RootNamespace>
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)NetTopologySuite.IO.ShapeFile2\NetTopologySuite.IO.ShapeFile2.csproj" />
+    <ProjectReference Include="$(SolutionDir)src\NetTopologySuite.IO.ShapeFile2\NetTopologySuite.IO.ShapeFile2.csproj" />
   </ItemGroup>
 
 </Project>
