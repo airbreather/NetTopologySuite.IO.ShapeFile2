@@ -1,17 +1,16 @@
 ﻿using System;
-using System.IO;
 using System.IO.Pipelines;
 
 namespace NetTopologySuite.IO
 {
     /// <summary>
-    /// Container for the three <see cref="Stream">Streams</see> that are required to be present in
-    /// any valid ESRI shapefile.
+    /// The input side container for the three file streams that are required to be present in any
+    /// fully valid ESRI shapefile.
     /// </summary>
-    public sealed class ShapefileRequiredFileContainer
+    public sealed class ShapefileRequiredFileReaderContainer
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ShapefileRequiredFileContainer"/> class.
+        /// Initializes a new instance of the <see cref="ShapefileRequiredFileReaderContainer"/> class.
         /// </summary>
         /// <param name="mainFileReader">
         /// The <see cref="PipeReader"/> that holds the shape data.
@@ -22,7 +21,7 @@ namespace NetTopologySuite.IO
         /// <param name="attributeFileReader">
         /// The <see cref="PipeReader"/> that holds the shape-by-shape metadata.
         /// </param>
-        public ShapefileRequiredFileContainer(PipeReader mainFileReader, PipeReader indexFileReader, PipeReader attributeFileReader)
+        public ShapefileRequiredFileReaderContainer(PipeReader mainFileReader, PipeReader indexFileReader, PipeReader attributeFileReader)
         {
             this.MainFileReader = mainFileReader ?? throw new ArgumentNullException(nameof(mainFileReader));
             this.IndexFileReader = indexFileReader ?? throw new ArgumentNullException(nameof(indexFileReader));

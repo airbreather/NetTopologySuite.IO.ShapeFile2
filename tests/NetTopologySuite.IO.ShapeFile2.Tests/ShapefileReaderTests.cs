@@ -15,7 +15,7 @@ namespace NetTopologySuite.IO
             using (var indexFileStream = new FileStream(@"D:\TIGER-CA\ROADS - NAD83.shx", FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan | FileOptions.Asynchronous))
             using (var attributeFileStream = new FileStream(@"D:\TIGER-CA\ROADS - NAD83.dbf", FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan | FileOptions.Asynchronous))
             {
-                var fileContainer = new ShapefileRequiredFileContainer(
+                var fileContainer = new ShapefileRequiredFileReaderContainer(
                     StreamConnection.GetReader(mainFileStream, new PipeOptions(useSynchronizationContext: false)),
                     StreamConnection.GetReader(indexFileStream, new PipeOptions(useSynchronizationContext: false)),
                     StreamConnection.GetReader(attributeFileStream, new PipeOptions(useSynchronizationContext: false)));
