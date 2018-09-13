@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +13,7 @@ namespace NetTopologySuite.IO
     {
         public override ValueTask VisitMainFileRecordAsync(ReadOnlyMemory<byte> rawRecordData, CancellationToken cancellationToken = default)
         {
-            var shapeType = (ShapeType)ToOrFromLittleEndian(Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rawRecordData.Span)));
+            var shapeType = (ShapeType)ToOrFromLittleEndian(MemoryMarshal.Read<int>(rawRecordData.Span));
             var innerRecordData = rawRecordData.Slice(sizeof(ShapeType));
 
             switch (shapeType)
@@ -23,11 +22,19 @@ namespace NetTopologySuite.IO
                     return this.OnVisitNullShapeAsync(cancellationToken);
 
                 case ShapeType.Point:
-                    return this.OnVisitPointXYAsync(Unsafe.ReadUnaligned<PointXY>(ref MemoryMarshal.GetReference(innerRecordData.Span)), cancellationToken);
+                    return this.OnVisitPointXYAsync(MemoryMarshal.Read<PointXY>(innerRecordData.Span), cancellationToken);
 
                 case ShapeType.PolyLine:
                 case ShapeType.Polygon:
                 case ShapeType.MultiPoint:
+                    var multiPointXY = new MultiPointXY
+                    {
+                        Box = MemoryMarshal.Read<ShapefileBoundingBoxXY>(innerRecordData.Span),
+                        RawPointsData = innerRecordData.Slice(36),
+                    };
+
+                    return this.OnVisitMultiPointXYAsync(multiPointXY, cancellationToken);
+
                 case ShapeType.PointZ:
                 case ShapeType.PolyLineZ:
                 case ShapeType.PolygonZ:
@@ -47,5 +54,7 @@ namespace NetTopologySuite.IO
         protected virtual ValueTask OnVisitNullShapeAsync(CancellationToken cancellationToken) => default;
 
         protected virtual ValueTask OnVisitPointXYAsync(PointXY point, CancellationToken cancellationToken) => default;
+
+        protected virtual ValueTask OnVisitMultiPointXYAsync(MultiPointXY multiPoint, CancellationToken cancellationToken) => default;
     }
 }
