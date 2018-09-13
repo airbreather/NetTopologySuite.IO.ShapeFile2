@@ -18,7 +18,7 @@ namespace NetTopologySuite.IO
                 var fileContainer = new ShapefilePipeReaderContainer(
                     StreamConnection.GetReader(mainFileStream, new PipeOptions(useSynchronizationContext: false)),
                     StreamConnection.GetReader(attributeFileStream, new PipeOptions(useSynchronizationContext: false)));
-                var visitor = Mock.Of<ShapefileVisitorBase>();
+                var visitor = new Mock<ShapefileRecordVisitorBase> { CallBase = true }.Object;
                 await ShapefileReader.ReadShapefileAsync(fileContainer, visitor);
             }
         }
