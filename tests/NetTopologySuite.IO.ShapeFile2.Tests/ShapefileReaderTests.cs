@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using Moq;
+using NUnit.Framework;
 using Pipelines.Sockets.Unofficial;
 using System.IO;
 using System.IO.Pipelines;
@@ -19,7 +20,7 @@ namespace NetTopologySuite.IO
                     StreamConnection.GetReader(mainFileStream, new PipeOptions(useSynchronizationContext: false)),
                     StreamConnection.GetReader(indexFileStream, new PipeOptions(useSynchronizationContext: false)),
                     StreamConnection.GetReader(attributeFileStream, new PipeOptions(useSynchronizationContext: false)));
-                var visitor = new ShapefileVisitorBase();
+                var visitor = Mock.Of<ShapefileVisitorBase>();
                 await ShapefileReader.ReadShapefileAsync(fileContainer, visitor);
             }
         }
