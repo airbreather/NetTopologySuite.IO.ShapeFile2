@@ -25,7 +25,9 @@ namespace NetTopologySuite.IO
                 case ShapeType.Point:
                     return this.OnVisitPointXYAsync(MemoryMarshal.Read<PointXY>(innerRecordSpan), cancellationToken);
 
+                // a Polygon is just a PolyLine with extra rules
                 case ShapeType.PolyLine:
+                case ShapeType.Polygon:
                     int numParts = ToOrFromLittleEndian(MemoryMarshal.Read<int>(innerRecordSpan.Slice(32)));
                     var rawPartsData = innerRecordData.Slice(40, sizeof(int) * numParts);
                     var polyLineXY = new PolyLineXY
@@ -35,9 +37,10 @@ namespace NetTopologySuite.IO
                         RawPointsData = innerRecordData.Slice(40 + rawPartsData.Length),
                     };
 
-                    return this.OnVisitPolyLineXYAsync(polyLineXY, cancellationToken);
+                    return shapeType == ShapeType.PolyLine
+                        ? this.OnVisitPolyLineXYAsync(polyLineXY, cancellationToken)
+                        : this.OnVisitPolygonXYAsync(polyLineXY, cancellationToken);
 
-                case ShapeType.Polygon:
                 case ShapeType.MultiPoint:
                     var multiPointXY = new MultiPointXY
                     {
@@ -70,5 +73,7 @@ namespace NetTopologySuite.IO
         protected virtual ValueTask OnVisitMultiPointXYAsync(MultiPointXY multiPoint, CancellationToken cancellationToken) => default;
 
         protected virtual ValueTask OnVisitPolyLineXYAsync(PolyLineXY polyLine, CancellationToken cancellationToken) => default;
+
+        protected virtual ValueTask OnVisitPolygonXYAsync(PolyLineXY polyLine, CancellationToken cancellationToken) => default;
     }
 }
