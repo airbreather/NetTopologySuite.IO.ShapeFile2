@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.IO;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -80,12 +79,16 @@ namespace NetTopologySuite.IO
             }
         }
 
-        private static async ValueTask<bool> FillBufferFromPipeAsync(PipeReader pipe, Memory<byte> bufferToFill, CancellationToken cancellationToken)
+        private static async ValueTask<bool> FillBufferFromPipeAsync(PipeReader pipe, Memory<byte> rem, CancellationToken cancellationToken)
         {
-            var rem = bufferToFill;
             while (rem.Length != 0)
             {
                 var read = await pipe.ReadAsync(cancellationToken).ConfigureAwait(false);
+                if (read.IsCanceled)
+                {
+                    return false;
+                }
+
                 var buffer = read.Buffer;
                 if (buffer.IsEmpty && read.IsCompleted)
                 {
