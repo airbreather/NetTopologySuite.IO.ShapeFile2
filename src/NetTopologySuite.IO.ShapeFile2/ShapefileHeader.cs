@@ -20,7 +20,7 @@ namespace NetTopologySuite.IO
         private ShapeType shapeTypeForAllRecords;
 
         [FieldOffset(36)]
-        private ShapefileBoundingBox boundingBox;
+        private ShapefileBoundingBoxXYZM boundingBox;
 
         public int FileCode
         {
@@ -52,7 +52,7 @@ namespace NetTopologySuite.IO
             set => this.shapeTypeForAllRecords = (ShapeType)ToOrFromLittleEndian((int)value);
         }
 
-        public ShapefileBoundingBox BoundingBox
+        public ShapefileBoundingBoxXYZM BoundingBox
         {
             get => this.boundingBox;
             set => this.boundingBox = value;

@@ -5,7 +5,7 @@ using static NetTopologySuite.IO.BitTwiddlers;
 namespace NetTopologySuite.IO
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct ShapefileBoundingBox
+    public struct ShapefileBoundingBoxXYZM
     {
         private double minX;
 
@@ -71,6 +71,6 @@ namespace NetTopologySuite.IO
             set => this.maxM = ToOrFromLittleEndian(value);
         }
 
-        public override string ToString() => $"ShapefileBoundingBox[MinX={this.MinX}, MinY={this.MinY}, MaxX={this.MaxX}, MaxY={this.MaxY}, MinZ={this.MinZ}, MaxZ={this.MaxZ}, MinM={this.MinM}, MaxM={this.MaxM}]";
+        public override string ToString() => $"ShapefileBoundingBoxXYZM[MinX={this.MinX}, MinY={this.MinY}, MaxX={this.MaxX}, MaxY={this.MaxY}, MinZ={this.MinZ}, MaxZ={this.MaxZ}, MinM={this.MinM}, MaxM={this.MaxM}]";
     }
 }

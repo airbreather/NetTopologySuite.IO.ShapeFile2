@@ -1,29 +1,62 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+
+using static NetTopologySuite.IO.BitTwiddlers;
 
 namespace NetTopologySuite.IO
 {
     public class ShapefileVisitorBase
     {
+        private static readonly ValueTask<bool> CompletedTrueTask = new ValueTask<bool>(true);
+
         public virtual ValueTask VisitMainFileHeaderAsync(ShapefileHeader header, CancellationToken cancellationToken = default) => default;
 
         public virtual ValueTask VisitMainFileRecordHeaderAsync(ShapefileMainFileRecordHeader header, CancellationToken cancellationToken = default) => default;
 
-        public async ValueTask VisitMainFileRecordAsync(ShapeType shapeType, Memory<byte> rawRecordData, CancellationToken cancellationToken = default)
+        public async ValueTask VisitMainFileRecordAsync(ReadOnlyMemory<byte> rawRecordData, CancellationToken cancellationToken = default)
         {
-            (shapeType, rawRecordData) = await this.OnVisitRawMainFileRecordAsync(shapeType, rawRecordData, cancellationToken).ConfigureAwait(false);
+            bool continueProcessing = await this.OnVisitRawMainFileRecordAsync(rawRecordData, cancellationToken).ConfigureAwait(false);
 
-            if (rawRecordData.IsEmpty)
+            if (continueProcessing)
             {
-                // subclass fully processed this at the raw level.
-                // we can move on.
-                return;
+                await this.ProcessInnerRecordAsync(rawRecordData, cancellationToken).ConfigureAwait(false);
             }
-
-            // TODO: interpret the record and add "friendly" methods for subclasses to override.
         }
 
-        protected virtual ValueTask<(ShapeType shapeType, Memory<byte> rawRecordData)> OnVisitRawMainFileRecordAsync(ShapeType shapeType, Memory<byte> rawRecordData, CancellationToken cancellationToken) => new ValueTask<(ShapeType shapeType, Memory<byte> rawRecordDate)>((shapeType, rawRecordData));
+        protected virtual ValueTask<bool> OnVisitRawMainFileRecordAsync(ReadOnlyMemory<byte> rawRecordData, CancellationToken cancellationToken) => CompletedTrueTask;
+
+        protected virtual ValueTask OnVisitNullShapeAsync(CancellationToken cancellationToken) => default;
+
+        private ValueTask ProcessInnerRecordAsync(ReadOnlyMemory<byte> rawRecordData, CancellationToken cancellationToken)
+        {
+            var shapeType = (ShapeType)ToOrFromLittleEndian(Unsafe.ReadUnaligned<int>(ref Unsafe.AsRef(rawRecordData.Span[0])));
+            var innerRecordData = rawRecordData.Slice(sizeof(ShapeType));
+
+            switch (shapeType)
+            {
+                case ShapeType.Null:
+                    return this.OnVisitNullShapeAsync(cancellationToken);
+
+                case ShapeType.Point:
+                case ShapeType.PolyLine:
+                case ShapeType.Polygon:
+                case ShapeType.MultiPoint:
+                case ShapeType.PointZ:
+                case ShapeType.PolyLineZ:
+                case ShapeType.PolygonZ:
+                case ShapeType.MultiPointZ:
+                case ShapeType.PointM:
+                case ShapeType.PolyLineM:
+                case ShapeType.PolygonM:
+                case ShapeType.MultiPointM:
+                case ShapeType.MultiPatch:
+                    throw new NotImplementedException("Still working on it.");
+
+                default:
+                    throw new NotSupportedException("Unrecognized shape type: " + shapeType);
+            }
+        }
     }
 }

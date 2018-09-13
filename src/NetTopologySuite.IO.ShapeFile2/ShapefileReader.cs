@@ -66,7 +66,7 @@ namespace NetTopologySuite.IO
                             break;
                         }
 
-                        await visitor.VisitMainFileRecordAsync(shapeType, recordBuf, cancellationToken).ConfigureAwait(false);
+                        await visitor.VisitMainFileRecordAsync(recordBuf, cancellationToken).ConfigureAwait(false);
                     }
                     finally
                     {
