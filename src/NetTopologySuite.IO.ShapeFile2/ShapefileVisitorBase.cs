@@ -14,7 +14,7 @@ namespace NetTopologySuite.IO
         {
             (shapeType, rawRecordData) = await this.OnVisitRawMainFileRecordAsync(shapeType, rawRecordData, cancellationToken).ConfigureAwait(false);
 
-            if (shapeType == ShapeType.Null || rawRecordData.IsEmpty)
+            if (rawRecordData.IsEmpty)
             {
                 // subclass fully processed this at the raw level.
                 // we can move on.
