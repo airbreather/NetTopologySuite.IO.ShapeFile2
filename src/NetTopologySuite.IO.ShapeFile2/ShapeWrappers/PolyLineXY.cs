@@ -6,13 +6,13 @@ namespace NetTopologySuite.IO.ShapeWrappers
 {
     public struct PolyLineXY
     {
-        public ShapefileBoundingBoxXY Box { get; set; }
+        public ShapefileBoundingBoxXY Box;
 
         [EditorBrowsable(EditorBrowsableState.Advanced)]
-        public ReadOnlyMemory<byte> RawPartsData { get; set; }
+        public ReadOnlyMemory<byte> RawPartsData;
 
         [EditorBrowsable(EditorBrowsableState.Advanced)]
-        public ReadOnlyMemory<byte> RawPointsData { get; set; }
+        public ReadOnlyMemory<byte> RawPointsData;
 
         public PartsEnumerator GetEnumerator() => new PartsEnumerator(in this);
 

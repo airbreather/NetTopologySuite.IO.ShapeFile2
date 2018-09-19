@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,31 +22,40 @@ namespace NetTopologySuite.IO
                 throw new ArgumentNullException(nameof(visitor));
             }
 
+            // Shapefiles are really weird, in that they have both big- and little-endian values in
+            // them, so both machine types will have to swap byte orders for some values. Since the
+            // performance-critical parts are all little-endian, and pretty much everybody who's
+            // likely to ever use this is too, we just skip the swapping code paths altogether and
+            // just add this check here.  If we have a reason to support big-endian machines later,
+            // we can do so at that point, without breaking anyone.
+            BitTwiddlers.EnsureLittleEndian();
             using (var oneHundredByteBufferOwner = MemoryPool<byte>.Shared.Rent(100))
             {
                 var oneHundredByteBuffer = oneHundredByteBufferOwner.Memory;
-                var (mainFile, attributeFile) = (pipeReaderContainer.MainFileReader, pipeReaderContainer.AttributeFileReader);
-
+                var recordHeaderBuf = oneHundredByteBuffer.Slice(0, Unsafe.SizeOf<ShapefileMainFileRecordHeader>());
                 var mainFileHeaderBuf = oneHundredByteBuffer.Slice(0, Unsafe.SizeOf<ShapefileHeader>());
+
+                // TODO: use indexFile, even if it's just to throw if we see something incompatible
+                // with our requirements (i.e., fully sequential files without any gaps).
+                var (mainFile, indexFile, attributeFile) = (pipeReaderContainer.MainFileReader, pipeReaderContainer.IndexFileReader, pipeReaderContainer.AttributeFileReader);
                 if (!await FillBufferFromPipeAsync(mainFile, mainFileHeaderBuf, cancellationToken).ConfigureAwait(false))
                 {
                     return;
                 }
 
-                var mainFileHeader = Unsafe.ReadUnaligned<ShapefileHeader>(ref oneHundredByteBuffer.Span[0]);
+                var mainFileHeader = MemoryMarshal.Read<ShapefileHeader>(mainFileHeaderBuf.Span);
                 await visitor.VisitMainFileHeaderAsync(mainFileHeader, cancellationToken).ConfigureAwait(false);
 
                 var shapeType = mainFileHeader.ShapeTypeForAllRecords;
 
                 while (true)
                 {
-                    var nextRecordHeaderBuf = oneHundredByteBuffer.Slice(0, Unsafe.SizeOf<ShapefileMainFileRecordHeader>());
-                    if (!await FillBufferFromPipeAsync(mainFile, nextRecordHeaderBuf, cancellationToken).ConfigureAwait(false))
+                    if (!await FillBufferFromPipeAsync(mainFile, recordHeaderBuf, cancellationToken).ConfigureAwait(false))
                     {
                         break;
                     }
 
-                    var nextRecordHeader = Unsafe.ReadUnaligned<ShapefileMainFileRecordHeader>(ref nextRecordHeaderBuf.Span[0]);
+                    var nextRecordHeader = MemoryMarshal.Read<ShapefileMainFileRecordHeader>(recordHeaderBuf.Span);
                     await visitor.VisitMainFileRecordHeaderAsync(nextRecordHeader, cancellationToken).ConfigureAwait(false);
 
                     uint nextRecordContentLengthInBytes = nextRecordHeader.ContentLengthInBytes;
@@ -55,25 +65,27 @@ namespace NetTopologySuite.IO
                     }
 
                     int recordLength = unchecked((int)nextRecordContentLengthInBytes);
-                    var recordBufOwner = recordLength <= oneHundredByteBuffer.Length
-                        ? oneHundredByteBufferOwner
-                        : MemoryPool<byte>.Shared.Rent(recordLength);
-                    try
+                    IMemoryOwner<byte> shortTermLease;
+                    Memory<byte> recordBuf;
+                    if (recordLength > oneHundredByteBuffer.Length)
                     {
-                        var recordBuf = recordBufOwner.Memory.Slice(0, recordLength);
+                        shortTermLease = MemoryPool<byte>.Shared.Rent(recordLength);
+                        recordBuf = shortTermLease.Memory.Slice(0, recordLength);
+                    }
+                    else
+                    {
+                        shortTermLease = null;
+                        recordBuf = oneHundredByteBuffer.Slice(0, recordLength);
+                    }
+
+                    using (shortTermLease)
+                    {
                         if (!await FillBufferFromPipeAsync(mainFile, recordBuf, cancellationToken).ConfigureAwait(false))
                         {
                             break;
                         }
 
                         await visitor.VisitMainFileRecordAsync(recordBuf, cancellationToken).ConfigureAwait(false);
-                    }
-                    finally
-                    {
-                        if (recordBufOwner != oneHundredByteBufferOwner)
-                        {
-                            recordBufOwner.Dispose();
-                        }
                     }
                 }
             }

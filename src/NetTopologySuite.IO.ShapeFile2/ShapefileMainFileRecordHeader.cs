@@ -13,14 +13,14 @@ namespace NetTopologySuite.IO
 
         public int RecordNumber
         {
-            get => ToOrFromBigEndian(this.recordNumber);
-            set => this.recordNumber = ToOrFromBigEndian(value);
+            get => ReverseEndianness(this.recordNumber);
+            set => this.recordNumber = ReverseEndianness(value);
         }
 
         public int ContentLengthInWords
         {
-            get => ToOrFromBigEndian(this.contentLengthInWords);
-            set => this.contentLengthInWords = ToOrFromBigEndian(value);
+            get => ReverseEndianness(this.contentLengthInWords);
+            set => this.contentLengthInWords = ReverseEndianness(value);
         }
 
         public uint ContentLengthInBytes

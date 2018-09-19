@@ -13,49 +13,31 @@ namespace NetTopologySuite.IO
         [FieldOffset(24)]
         private int fileLengthInWords;
 
-        [FieldOffset(28)]
-        private int version;
+        [field: FieldOffset(28)]
+        public int Version { get; set; }
 
-        [FieldOffset(32)]
-        private ShapeType shapeTypeForAllRecords;
+        [field: FieldOffset(32)]
+        public ShapeType ShapeTypeForAllRecords { get; set; }
 
         [FieldOffset(36)]
-        private ShapefileBoundingBoxXYZM boundingBox;
+        public ShapefileBoundingBoxXYZM BoundingBox;
 
         public int FileCode
         {
-            get => ToOrFromBigEndian(this.fileCode);
-            set => this.fileCode = ToOrFromBigEndian(value);
+            get => ReverseEndianness(this.fileCode);
+            set => this.fileCode = ReverseEndianness(value);
         }
 
         public int FileLengthInWords
         {
-            get => ToOrFromBigEndian(this.fileLengthInWords);
-            set => this.fileLengthInWords = ToOrFromBigEndian(value);
+            get => ReverseEndianness(this.fileLengthInWords);
+            set => this.fileLengthInWords = ReverseEndianness(value);
         }
 
         public uint FileLengthInBytes
         {
             get => WordsToBytes(this.FileLengthInWords);
             set => this.FileLengthInWords = BytesToWords(value);
-        }
-
-        public int Version
-        {
-            get => ToOrFromLittleEndian(this.version);
-            set => this.version = ToOrFromLittleEndian(value);
-        }
-
-        public ShapeType ShapeTypeForAllRecords
-        {
-            get => (ShapeType)ToOrFromLittleEndian((int)this.shapeTypeForAllRecords);
-            set => this.shapeTypeForAllRecords = (ShapeType)ToOrFromLittleEndian((int)value);
-        }
-
-        public ShapefileBoundingBoxXYZM BoundingBox
-        {
-            get => this.boundingBox;
-            set => this.boundingBox = value;
         }
 
         public override string ToString() => $"ShapefileMainFileHeader[FileCode={this.FileCode}, FileLengthInWords={this.FileLengthInWords}, Version={this.Version}, ShapeTypeForAllRecords={this.ShapeTypeForAllRecords}, BoundingBox={this.BoundingBox}]";

@@ -5,15 +5,13 @@ using System.Threading.Tasks;
 
 using NetTopologySuite.IO.ShapeWrappers;
 
-using static NetTopologySuite.IO.BitTwiddlers;
-
 namespace NetTopologySuite.IO
 {
     public abstract class ShapefileRecordVisitorBase : ShapefileVisitorBase
     {
         public sealed override ValueTask VisitMainFileRecordAsync(ReadOnlyMemory<byte> rawRecordData, CancellationToken cancellationToken = default)
         {
-            var shapeType = (ShapeType)ToOrFromLittleEndian(MemoryMarshal.Read<int>(rawRecordData.Span));
+            var shapeType = MemoryMarshal.Read<ShapeType>(rawRecordData.Span);
             var innerRecordData = rawRecordData.Slice(sizeof(ShapeType));
             var innerRecordSpan = innerRecordData.Span;
 
@@ -25,10 +23,13 @@ namespace NetTopologySuite.IO
                 case ShapeType.Point:
                     return this.OnVisitPointXYAsync(MemoryMarshal.Read<PointXY>(innerRecordSpan), cancellationToken);
 
+                case ShapeType.PointM:
+                    return this.OnVisitPointXYMAsync(MemoryMarshal.Read<PointXYM>(innerRecordSpan), cancellationToken);
+
                 // a Polygon is just a PolyLine with extra rules
                 case ShapeType.PolyLine:
                 case ShapeType.Polygon:
-                    int numParts = ToOrFromLittleEndian(MemoryMarshal.Read<int>(innerRecordSpan.Slice(32)));
+                    int numParts = MemoryMarshal.Read<int>(innerRecordSpan.Slice(32));
                     var rawPartsData = innerRecordData.Slice(40, sizeof(int) * numParts);
                     var polyLineXY = new PolyLineXY
                     {
@@ -54,7 +55,6 @@ namespace NetTopologySuite.IO
                 case ShapeType.PolyLineZ:
                 case ShapeType.PolygonZ:
                 case ShapeType.MultiPointZ:
-                case ShapeType.PointM:
                 case ShapeType.PolyLineM:
                 case ShapeType.PolygonM:
                 case ShapeType.MultiPointM:
@@ -69,6 +69,8 @@ namespace NetTopologySuite.IO
         protected virtual ValueTask OnVisitNullShapeAsync(CancellationToken cancellationToken) => default;
 
         protected virtual ValueTask OnVisitPointXYAsync(PointXY point, CancellationToken cancellationToken) => default;
+
+        protected virtual ValueTask OnVisitPointXYMAsync(PointXYM point, CancellationToken cancellationToken) => default;
 
         protected virtual ValueTask OnVisitMultiPointXYAsync(MultiPointXY multiPoint, CancellationToken cancellationToken) => default;
 

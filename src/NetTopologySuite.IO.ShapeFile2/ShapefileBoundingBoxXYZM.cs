@@ -1,75 +1,25 @@
 ﻿using System.Runtime.InteropServices;
 
-using static NetTopologySuite.IO.BitTwiddlers;
-
 namespace NetTopologySuite.IO
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct ShapefileBoundingBoxXYZM
     {
-        private double minX;
+        public double MinX { get; set; }
 
-        private double minY;
+        public double MinY { get; set; }
 
-        private double maxX;
+        public double MaxX { get; set; }
 
-        private double maxY;
+        public double MaxY { get; set; }
 
-        private double minZ;
+        public double MinZ { get; set; }
 
-        private double maxZ;
+        public double MaxZ { get; set; }
 
-        private double minM;
+        public double MinM { get; set; }
 
-        private double maxM;
-
-        public double MinX
-        {
-            get => ToOrFromLittleEndian(this.minX);
-            set => this.minX = ToOrFromLittleEndian(value);
-        }
-
-        public double MinY
-        {
-            get => ToOrFromLittleEndian(this.minY);
-            set => this.minY = ToOrFromLittleEndian(value);
-        }
-
-        public double MaxX
-        {
-            get => ToOrFromLittleEndian(this.maxX);
-            set => this.maxX = ToOrFromLittleEndian(value);
-        }
-
-        public double MaxY
-        {
-            get => ToOrFromLittleEndian(this.maxY);
-            set => this.maxY = ToOrFromLittleEndian(value);
-        }
-
-        public double MinZ
-        {
-            get => ToOrFromLittleEndian(this.minZ);
-            set => this.minZ = ToOrFromLittleEndian(value);
-        }
-
-        public double MaxZ
-        {
-            get => ToOrFromLittleEndian(this.maxZ);
-            set => this.maxZ = ToOrFromLittleEndian(value);
-        }
-
-        public double MinM
-        {
-            get => ToOrFromLittleEndian(this.minM);
-            set => this.minM = ToOrFromLittleEndian(value);
-        }
-
-        public double MaxM
-        {
-            get => ToOrFromLittleEndian(this.maxM);
-            set => this.maxM = ToOrFromLittleEndian(value);
-        }
+        public double MaxM { get; set; }
 
         public override string ToString() => $"ShapefileBoundingBoxXYZM[MinX={this.MinX}, MinY={this.MinY}, MaxX={this.MaxX}, MaxY={this.MaxY}, MinZ={this.MinZ}, MaxZ={this.MaxZ}, MinM={this.MinM}, MaxM={this.MaxM}]";
     }
