@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NetTopologySuite.IO
 {
@@ -28,6 +29,36 @@ namespace NetTopologySuite.IO
             if (!BitConverter.IsLittleEndian)
             {
                 ThrowNotSupportedExceptionForBigEndian();
+            }
+        }
+
+        internal static unsafe bool Equals<T>(ref T first, ref T second)
+            where T : unmanaged
+        {
+            fixed (T* pFirst = &first, pSecond = &second)
+            {
+                var span1 = new ReadOnlySpan<byte>(pFirst, sizeof(T));
+                var span2 = new ReadOnlySpan<byte>(pSecond, sizeof(T));
+                return span1.SequenceEqual(span2);
+            }
+        }
+
+        internal static unsafe int GetHashCode<T>(ref T val)
+            where T : unmanaged
+        {
+            fixed (T* pVal = &val)
+            {
+                // TODO: use a binary hash function
+                var thisSpan = new ReadOnlySpan<byte>(pVal, sizeof(T));
+                var thisIntSpan = MemoryMarshal.Cast<byte, int>(thisSpan);
+
+                int hc = 17;
+                foreach (int x in thisIntSpan)
+                {
+                    hc = unchecked((hc * 31) + x);
+                }
+
+                return hc;
             }
         }
 

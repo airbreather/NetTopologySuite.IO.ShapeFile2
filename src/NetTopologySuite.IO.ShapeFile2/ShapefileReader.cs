@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.IO;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -46,6 +47,27 @@ namespace NetTopologySuite.IO
                 var mainFileHeader = MemoryMarshal.Read<ShapefileHeader>(mainFileHeaderBuf.Span);
                 await visitor.VisitMainFileHeaderAsync(mainFileHeader, cancellationToken).ConfigureAwait(false);
 
+                if (!await FillBufferFromPipeAsync(indexFile, mainFileHeaderBuf, cancellationToken).ConfigureAwait(false))
+                {
+                    throw new NotSupportedException("Headers of main and index files must match, for now.");
+                }
+
+                var indexFileHeader = MemoryMarshal.Read<ShapefileHeader>(mainFileHeaderBuf.Span);
+
+                // temporarily replace the stored file length so that the two headers should be
+                // otherwise identical.
+                int indexFileLengthInWords = indexFileHeader.FileLengthInWords;
+                indexFileHeader.FileLengthInWords = mainFileHeader.FileLengthInWords;
+                if (mainFileHeader != indexFileHeader)
+                {
+                    throw new NotSupportedException("Headers of main and index files must match, for now.");
+                }
+
+                // restore the temporarily replaced file length so that the index file header is
+                // back to what's actually stored in the file.
+                indexFileHeader.FileLengthInWords = indexFileLengthInWords;
+
+                // TODO: do more with the index file.
                 var shapeType = mainFileHeader.ShapeTypeForAllRecords;
 
                 while (true)
