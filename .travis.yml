@@ -1,8 +1,8 @@
 language: csharp
 mono: none
 sudo: false
-dotnet: 2.1.402
-dist: trusty
+dotnet: 2.2
+dist: xenial
 script:
 - dotnet build -c Release
 - dotnet test tests/NetTopologySuite.IO.ShapeFile2.Tests --no-build --no-restore -c Release

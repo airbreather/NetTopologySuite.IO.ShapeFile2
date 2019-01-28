@@ -11,11 +11,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 		.travis.yml = .travis.yml
+		Default.ruleset = Default.ruleset
 		LICENSE.md = LICENSE.md
 		nts.snk = nts.snk
 		README.md = README.md
 		stylecop.json = stylecop.json
-		StyleCop.ruleset = StyleCop.ruleset
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetTopologySuite.IO.ShapeFile2.Tests", "tests\NetTopologySuite.IO.ShapeFile2.Tests\NetTopologySuite.IO.ShapeFile2.Tests.csproj", "{576B4306-EC26-4659-978B-96DD71F2AAF5}"
